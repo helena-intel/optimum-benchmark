@@ -3,6 +3,7 @@ import os
 import random
 import shutil
 from abc import ABC
+from dataclasses import dataclass
 from logging import getLogger
 from multiprocessing import Process
 from typing import (
@@ -47,6 +48,12 @@ from .utils import (
 LOGGER = getLogger("backend")
 
 
+@dataclass
+class Device:
+    type: str
+    index: int | None = None
+
+
 class Backend(Generic[BackendConfigT], ABC):
     NAME: ClassVar[str]
 
@@ -60,7 +67,10 @@ class Backend(Generic[BackendConfigT], ABC):
         self.task = task
         self.model = model
         self.hub_kwargs = hub_kwargs
-        self.device = torch.device(device)
+        if self.NAME == "openvino":
+            self.device = Device(type=device, index=None)
+        else:
+            self.device = torch.device(device)
 
         if self.is_diffusion_pipeline():
             # for pipelines
@@ -149,7 +159,7 @@ class Backend(Generic[BackendConfigT], ABC):
         torch.manual_seed(self.config.seed)
 
     def prepare_input(self, input: Dict[str, Any]) -> Dict[str, Any]:
-        if self.is_diffusion_pipeline():
+        if self.is_diffusion_pipeline() or self.NAME == "openvino":
             # diffusion pipelines expect a list of strings as input
             return input
         else:

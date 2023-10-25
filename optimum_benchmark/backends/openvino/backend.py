@@ -24,18 +24,16 @@ class OVBackend(Backend[OVConfig]):
         self.validate_task()
 
         self.ovmodel_class = get_class(TASKS_TO_OVMODEL[self.task])
-        ortmodel_name = self.ovmodel_class.__name__
-        LOGGER.info(
-            f"\t+ Inferred OVModel class {ortmodel_name} for task {self.task} and model_type {self.model_type}"
-        )
+        ovmodel_name = self.ovmodel_class.__name__
+        LOGGER.info(f"\t+ Inferred OVModel class {ovmodel_name} for task {self.task} and model_type {self.model_type}")
 
     def validate_task(self) -> None:
         if self.task not in TASKS_TO_OVMODEL:
             raise NotImplementedError(f"OVBackend does not support task {self.task}")
 
     def validate_device(self) -> None:
-        if self.device.type != "cpu":
-            raise ValueError(f"OVBackend only supports CPU devices, got {self.device.type}")
+        if self.device.type.upper() not in ["CPU", "GPU"]:
+            raise ValueError(f"OVBackend only supports CPU and GPU devices, got {self.device.type}")
 
     def configure(self, config: OVConfig) -> None:
         super().configure(config)
@@ -67,14 +65,21 @@ class OVBackend(Backend[OVConfig]):
     @property
     def ovmodel_kwargs(self) -> Dict[str, Any]:
         if self.is_text_generation_model():
-            return {"use_cache": self.config.use_cache, "use_merged": self.config.use_merged}
+            return {"use_cache": self.config.use_cache}
         else:
             return {}
 
     def load_ovmodel(self) -> None:
+        print(
+            f"loading model with config {self.openvino_config} and kwargs {self.ovmodel_kwargs} to {self.device.type}"
+        )
+        if self.export:
+            self.openvino_config["CACHE_DIR"] = ""
+
         self.pretrained_model = self.ovmodel_class.from_pretrained(
             self.model,
             export=self.export,
+            device=self.device.type.upper(),
             ov_config=self.openvino_config,
             **self.ovmodel_kwargs,
             **self.hub_kwargs,

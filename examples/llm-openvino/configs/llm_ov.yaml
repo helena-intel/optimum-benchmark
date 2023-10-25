@@ -1,0 +1,32 @@
+defaults:
+  - backend: openvino # default backend
+  - benchmark: inference # default benchmark
+  - experiment # inheriting experiment schema
+  - _self_ # for hydra 1.1 compatibility
+  - override hydra/job_logging: colorlog # colorful logging
+  - override hydra/hydra_logging: colorlog # colorful logging
+
+hydra:
+  run:
+    dir: experiments/${experiment_name}
+  sweep:
+    dir: experiments/${experiment_name}
+  job:
+    chdir: true
+
+backend:
+  export: true
+
+experiment_name: llm_openvino_${device} 
+model: bigscience/bloom-560m
+
+benchmark:
+  memory: true
+  warmup_runs: 10
+  input_shapes:
+    batch_size: 1
+    sequence_length: 256
+
+  generate_kwargs:
+    max_new_tokens: 100
+    min_new_tokens: 100

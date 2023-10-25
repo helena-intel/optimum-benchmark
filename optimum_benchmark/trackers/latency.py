@@ -1,15 +1,17 @@
 import time
 from contextlib import contextmanager
 from logging import getLogger
-from typing import List
+from typing import List, Union
 
 import torch
+
+from ..backends.base import Device
 
 LOGGER = getLogger("latency_tracker")
 
 
 class LatencyTracker:
-    def __init__(self, device: torch.device, backend: str):
+    def __init__(self, device: Union[torch.device, Device], backend: str):
         self.device = device
         self.backend = backend
         self.latencies: List[float] = []

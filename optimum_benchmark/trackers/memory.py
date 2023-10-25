@@ -3,10 +3,12 @@ from contextlib import contextmanager
 from logging import getLogger
 from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
+from typing import Union
 
 import psutil
 import torch
 
+from ..backends.base import Device
 from ..env_utils import bytes_to_mega_bytes, is_nvidia_system, is_rocm_system
 from ..import_utils import is_py3nvml_available, is_pyrsmi_available
 
@@ -14,7 +16,7 @@ LOGGER = getLogger("memory_tracker")
 
 
 class MemoryTracker:
-    def __init__(self, device: torch.device):
+    def __init__(self, device: Union[torch.device, Device]):
         self.device = device
         self.peak_memory: int = 0
 
